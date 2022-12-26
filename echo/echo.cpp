@@ -6,67 +6,54 @@
 #include <arpa/inet.h>
 using namespace std;
 
-#define port 7
-#define address "172.16.40.1"
-#define bufSize 512 
-
 int main (int argc, char **argv)
 {
-    //Aдрес программы-клиента
- sockaddr_in * cAddr = new (sockaddr_in);
- cAddr->sin_family = AF_INET; // интернет протокол IPv4
- cAddr->sin_port = 0; // любой порт на усмотрение ОС
- cAddr->sin_addr.s_addr = 0; // все адреса нашего пк
+	sockaddr_in * self_addr = new (sockaddr_in);
+	self_addr->sin_family = AF_INET;
+	self_addr->sin_port = 0;
+	self_addr->sin_addr.s_addr = 0;
 
-    //Адрес программы сервера
- sockaddr_in * sAddr = new (sockaddr_in);
- sAddr->sin_family = AF_INET; // интернет протокол IPv4
- sAddr->sin_port = htons(port); // порт 
- sAddr->sin_addr.s_addr = inet_addr(address); // все адреса нашего пк
-	
-    // Буфер для передачи и приема данных
-    char *buf = new char[bufSize];
-    int msgLen = str.length(); // вычисляем длину строки
-    size_t length = str.copy(buf,msgLen); // копируем строку
-	
-    // создание сокет
-    int Socket = socket(AF_INET, SOCK_STREAM, 0); //TCP
-    if (Socket == -1) {
-        cerr << "Error open socket";
-    }
+	sockaddr_in * srv_addr = new (sockaddr_in);
+	srv_addr->sin_family = AF_INET;
+	srv_addr->sin_port = htons(7);
+	srv_addr->sin_addr.s_addr = inet_addr("172.16.40.1");
 
-    int rc = bind(Socket, (const sockaddr *) cAddr, sizeof ( sockaddr_in));
-    if (rc == -1) {
-        close(Socket);
-        cerr <<"Error bind socket with local address";
-    }
-    //установка соединения
-	rc = connect(Socket, ( const sockaddr*) sAddr, sizeof(sockaddr_in));
-    if ( rc == -1) {
-        close(Socket);
-        cerr <<"Error connect socket with remote server";
-    }
-    // передача и прием данных
- 	rc = send(Socket, buf,msgLen,0);
-    if ( rc == -1) {
-        close(Socket);
-        cerr <<"Error send message";
-    }
- 	cout << "We send:  " << buf << endl;
+	char *buf = new char[1024];
+	string str ("KirillKond\n");
+	int msg = str.length();
+	size_t length = str.copy(buf,msg);
 
- 	rc = recv(Socket, buf,bufSize,0);
-    if ( rc == -1) {
-        close(Socket);
-        cerr <<"Error receive answer";
-    }
- 	buf[rc]='\0';
- 	cout << "We receive:  " << buf << endl;
-	
-    // закрыть сокет
-    close(Socket);
+	int s = socket(AF_INET, SOCK_STREAM, 0);
+	if (s == -1) {
+		cerr << "Socket error";
+	}
+	int rc = bind(s, (const sockaddr *) self_addr, sizeof ( sockaddr_in));
+	if (rc == -1) {
+		close(s);
+		cerr <<"Error bind socket with local address";
+	}
+	rc = connect(s, ( const sockaddr*) srv_addr, sizeof(sockaddr_in));
+	if ( rc == -1) {
+		close(s);
+		cerr <<"Error connect socket with remote server";
+	}
+	rc = send(s, buf,msg,0);
+	if ( rc == -1) {
+		close(s);
+		cerr <<"Error send message";
+	}
+	cout << "We send:  " << buf << endl;
+	rc = recv(s, buf, 1024,0);
+	if ( rc == -1) {
+		close(s);
+		cerr <<"Error receive answer";
+	}
+	buf[rc]='\0';
+	cout << "We receive:  " << buf << endl;
+	close(s);
 
-    delete cAddr;
-    delete sAddr;
-    delete[] buf;
-    return 0;
+	delete self_addr;
+	delete srv_addr;
+	delete[] buf;
+	return 0;
 }
